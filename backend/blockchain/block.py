@@ -36,6 +36,15 @@ class Block:
             f', Nonce: {self.nonce})'
             )
 
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    def to_json(self):
+        """
+        Serialize a block into a dictionary of its attribute 
+        """
+        return self.__dict__
+
     @staticmethod
     def mine_block(last_block, data):
         """
@@ -63,6 +72,13 @@ class Block:
         return Block(**GENESIS_DATA)
 
     @staticmethod
+    def from_json(block_json):
+        """
+        Deserialize a block's json representation back to block instance
+        """
+        return Block(**block_json)
+
+    @staticmethod
     def adjust_difficulty( last_block, new_timestamp ):
         """
         This method, adjusts the difficulty according to the mine rate
@@ -77,10 +93,44 @@ class Block:
 
         return 1
 
+    @staticmethod
+    def is_valid_block(last_block, block):
+        """
+        Validate the block by enforcing the following rules:
+            - the block must have proper last_hash reference
+            - the block must see the proof of work requirement
+            - difficult must be adjust by 1
+            - the block hash must be valid combination of the block fields
+        """
+        if block.last_hash != last_block.hash:
+            raise Exception('the last_hash mustbe correct')
+
+        if hex_to_bin(block.hash)[0:block.difficulty] != '0' * block.difficulty:
+            raise Exception('the proof of requirement was not meet')
+
+        if abs(last_block.difficulty - block.difficulty) > 1:
+            raise Exception('the block difficulty should change by 1')
+
+        reconstructed_hash = crypto_hash (
+            block.time_stamp,
+            block.last_hash,
+            block.data,
+            block.difficulty,
+            block.nonce
+        )
+
+        if block.hash != reconstructed_hash:
+            raise Exception('The block hash must be correct')
+
+
 def main():
     genesis_block = Block.genesis()
-    block = Block.mine_block(genesis_block,'y')
-    print(block)
+    bad_block = Block.mine_block(genesis_block, 'test_data')
+    #bad_block.last_hash = 'evil_data'
+    try:
+        Block.is_valid_block(genesis_block, bad_block)
+    except Exception as e: 
+        print(f'The is valid block: {e}')       
 
 if __name__ == '__main__':
     main()
