@@ -2,6 +2,7 @@ import pytest
 
 from backend.wallet.transactions import Transaction
 from backend.wallet.wallet import Wallet
+from backend.config import MINING_REWARD, MINING_REWARD_INPUT
 
 def test_transaction():
     sender_wallet = Wallet()
@@ -68,3 +69,28 @@ def test_valid_transaction_with_invalid_signature():
 
     with pytest.raises(Exception, match='Invalid signature'):
         Transaction.transaction_is_valid(transaction)
+
+def test_reward_transaction():
+    miner_wallet = Wallet()
+    transaction = Transaction.reward_transaction(miner_wallet)
+
+    assert transaction.input == MINING_REWARD_INPUT
+    assert transaction.output[miner_wallet.address] == MINING_REWARD
+
+def test_valid_reward_transaction():
+    reward_transaction = Transaction.reward_transaction(Wallet())
+    Transaction.transaction_is_valid(reward_transaction)
+
+def test_invalid_reward_transaction_extra_reciepient():
+    reward_transaction = Transaction.reward_transaction(Wallet())
+    reward_transaction.output['extra_reciepient'] = 60
+
+    with pytest.raises(Exception, match='Invalid Mining Reward'):
+        Transaction.transaction_is_valid(reward_transaction)
+
+def test_invalid_reward_transaction_invalid_amount():
+    miner_wallet = Wallet()
+    reward_transaction = Transaction.reward_transaction(miner_wallet)
+    reward_transaction.output[miner_wallet.address] = 1998
+    with pytest.raises(Exception, match='Invalid Mining Reward'):
+        Transaction.transaction_is_valid(reward_transaction)
