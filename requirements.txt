@@ -1,5 +1,5 @@
 pytest == 5.4.1
-Flask == 1.1.1
+Flask == 2.3.2
 pubnub == 4.1.6
 requests==2.22.0
 cryptography==39.0.1
